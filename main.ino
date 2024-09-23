@@ -1,19 +1,19 @@
 #include <GyverNTC.h>
-//АДИЛЬ ЧОРТ
-//ОРГИЯ ДИСКАВЕРИ
 
+// Определение пинов и констант
 #define TdsSensorPin A0
+#define pHSensorPin A1
 #define VREF 5.0
 #define ADC_RESOLUTION 1024.0  
-GyverNTC therm(1, 10000, 3950);
+GyverNTC therm(1, 10000, 3950);  // Температурный датчик
 
 float tdsFactor = 0.5;
 float temperature = 25;
-const int trigPin = 9;
-const int echoPin = 10;
+const int trigPin = 11;  // Триггер для ультразвукового датчика
+const int echoPin = 12;  // Эхо для ультразвукового датчика
 
 unsigned long previousMillis = 0;
-const long interval = 10000; // 10-second interval
+const long interval = 10000; // Интервал 10 секунд
 
 void setup() {
   pinMode(trigPin, OUTPUT);
@@ -21,6 +21,7 @@ void setup() {
   Serial.begin(9600);
 }
 
+// Функция для измерения TDS
 float getTDSValue() {
   int sensorValue = analogRead(TdsSensorPin);
   float voltage = sensorValue * (VREF / ADC_RESOLUTION);
@@ -29,10 +30,20 @@ float getTDSValue() {
   return ppmValue;
 }
 
+// Функция для измерения pH
+float getpH() {
+  int sensorValue = analogRead(pHSensorPin);  // Чтение значения с аналогового пина pH сенсора
+  float voltage = sensorValue * (VREF / ADC_RESOLUTION);  // Преобразование значения в напряжение
+  float pHValue = 7 + ((2.5 - voltage) / 0.18);  // Формула для расчета pH
+  return pHValue;
+}
+
+// Функция для измерения температуры
 float getTemperature() {
   return therm.getTempAverage();
 }
 
+// Функция для измерения расстояния
 int getDistance() {
   digitalWrite(trigPin, LOW);
   delayMicroseconds(2);
@@ -47,27 +58,30 @@ int getDistance() {
 void loop() {
   unsigned long currentMillis = millis();
 
-  // Check if 10 seconds have passed
+  // Проверяем, прошли ли 10 секунд
   if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
 
-    // Get sensor data
+    // Получаем данные с сенсоров
     float tdsValue = getTDSValue();
     float currentTemperature = getTemperature();
     int distance = getDistance();
+    float pHValue = getpH();  // Получаем значение pH
 
-    // Create an array to hold the data
-    float data[3];
+    // Создаем массив для хранения данных
+    float data[4];
     data[0] = tdsValue;
     data[1] = currentTemperature;
     data[2] = distance;
+    data[3] = pHValue;
 
-    // Print the array elements in one line
+    // Печатаем элементы массива в одну строку
     Serial.print(data[0]);
     Serial.print(",");
     Serial.print(data[1]);
     Serial.print(",");
     Serial.print(data[2]);
-    Serial.println(); // End of line
+    Serial.print(",");
+    Serial.println(data[3]);  // Выводим pH значение
   }
 }
